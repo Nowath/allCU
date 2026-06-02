@@ -30,6 +30,28 @@
   z-index: 30;
   flex-shrink: 0;;
 }
+.topbar.hidden { display: none; }
+
+/* Floating button shown in the top-right corner when the bar is hidden. */
+.reveal-bar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 60;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+.reveal-bar:hover { background: var(--bar); }
 
 .brand {
   font-size: 1.05rem;
@@ -203,6 +225,7 @@
   flex: 1;
   position: relative;
   background: #fff;
+  overflow: auto;
 }
 .frame {
   width: 100%;

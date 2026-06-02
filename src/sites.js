@@ -8,6 +8,9 @@
 //      name:  label shown in the menu
 //      url:   the page loaded into the iframe
 //      group: (optional) section header to group items under
+//      external: (optional) if true, clicking opens the site in a new
+//                browser tab instead of loading it inside an iframe
+//                (use for sites that block iframe embedding)
 //    }
 //
 //  Sites load inside an IFRAME. For logins to persist, your
@@ -17,7 +20,7 @@
 // ============================================================
 
 const sites = [
-  { id: 'reg', name: 'Reg Chula', url: 'https://www2.reg.chula.ac.th/', group: 'Chula' },
+  { id: 'reg', name: 'Reg Chula', url: 'https://www2.reg.chula.ac.th/', group: 'Chula', external: true },
   { id: 'rcu',          name: 'RCU Chula (Login)',  url: 'https://rcuchula.com/main/login_form_j.php?', group: 'Chula' },
   { id: 'mycourseville',name: 'MyCourseVille',      url: 'https://www.mycourseville.com/',              group: 'Learning' },
   { id: 'cusc',         name: 'CUSC Booking',       url: 'https://book.cusc.chula.ac.th/',              group: 'Services' },

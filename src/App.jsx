@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FiMenu, FiX, FiRefreshCw, FiExternalLink } from 'react-icons/fi'
+import { FiMenu, FiX, FiRefreshCw, FiExternalLink, FiChevronUp, FiChevronDown } from 'react-icons/fi'
 import sites from './sites'
 import './App.css'
 
 const LS_ACTIVE = 'chulaAll.activeId'
 const LS_OPENED = 'chulaAll.openedIds'
+const DEFAULT_ID = 'mycourseville'
 
 function loadActive() {
   const saved = localStorage.getItem(LS_ACTIVE)
-  if (saved && sites.some((s) => s.id === saved)) return saved
-  return sites[0]?.id ?? null
+  if (saved && sites.some((s) => s.id === saved && !s.external)) return saved
+  // Default to MyCourseVille, falling back to the first embeddable site.
+  if (sites.some((s) => s.id === DEFAULT_ID && !s.external)) return DEFAULT_ID
+  return sites.find((s) => !s.external)?.id ?? null
 }
 
 function loadOpened(active) {
@@ -25,6 +28,7 @@ function loadOpened(active) {
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [barHidden, setBarHidden] = useState(false)
   const [activeId, setActiveId] = useState(loadActive)
   const [openedIds, setOpenedIds] = useState(() => loadOpened(loadActive()))
   const [query, setQuery] = useState('')
@@ -57,6 +61,13 @@ export default function App() {
   }, [query])
 
   const selectSite = (id) => {
+    const site = sites.find((s) => s.id === id)
+    // External sites block iframe embedding — open them directly in a new tab.
+    if (site?.external) {
+      window.open(site.url, '_blank', 'noopener,noreferrer')
+      setMenuOpen(false)
+      return
+    }
     setActiveId(id)
     setOpenedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
     setMenuOpen(false)
@@ -71,7 +82,19 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
+      {/* Floating button to bring the navbar back when it's hidden. */}
+      {barHidden && (
+        <button
+          className="reveal-bar"
+          onClick={() => setBarHidden(false)}
+          title="Show toolbar"
+          aria-label="Show toolbar"
+        >
+          <FiChevronDown size={18} />
+        </button>
+      )}
+
+      <header className={`topbar ${barHidden ? 'hidden' : ''}`}>
         <button
           className="hamburger"
           aria-label="Toggle menu"
@@ -102,6 +125,14 @@ export default function App() {
             </a>
           </>
         )}
+        <button
+          className="icon-btn"
+          onClick={() => setBarHidden(true)}
+          title="Hide toolbar"
+          aria-label="Hide toolbar"
+        >
+          <FiChevronUp size={16} />
+        </button>
       </header>
 
       <div
