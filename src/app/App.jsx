@@ -1,42 +1,49 @@
 import { useEffect, useState } from 'react'
 import { FiGrid, FiBookOpen, FiSun, FiMoon } from 'react-icons/fi'
-import GradeCalculator from './GradeCalculator'
-import LinkHub from './LinkHub'
-import './App.css'
+import { readString, writeString } from '@/shared/lib'
+import { GradeCalculatorPage } from '@/pages/grade-calculator'
+import { LinkHubPage } from '@/pages/link-hub'
+import logo from '@/assets/cualllogo.png'
+import './index.css'
 
 const LS_TAB = 'allcu.tab'
 const LS_THEME = 'allcu.theme'
 
 const TABS = [
-  { key: 'grade', label: 'คำนวณเกรด', icon: FiBookOpen },
-  { key: 'hub', label: 'รวมเว็บ', icon: FiGrid },
+  { key: 'grade', label: 'คำนวณเกรด', icon: FiBookOpen, Page: GradeCalculatorPage },
+  { key: 'hub', label: 'รวมเว็บ', icon: FiGrid, Page: LinkHubPage },
 ]
 
 export default function App() {
   const [tab, setTab] = useState(() => {
-    const saved = localStorage.getItem(LS_TAB)
+    const saved = readString(LS_TAB, 'grade')
     return TABS.some((t) => t.key === saved) ? saved : 'grade'
   })
 
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem(LS_THEME)
+    const saved = readString(LS_THEME, 'light')
     return saved === 'dark' || saved === 'light' ? saved : 'light'
   })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem(LS_THEME, theme)
+    writeString(LS_THEME, theme)
   }, [theme])
 
   const select = (key) => {
     setTab(key)
-    localStorage.setItem(LS_TAB, key)
+    writeString(LS_TAB, key)
   }
+
+  const ActivePage = (TABS.find((t) => t.key === tab) ?? TABS[0]).Page
 
   return (
     <div className="app">
       <header className="topbar">
-        <h1 className="brand">AllCU</h1>
+        <div className='logo'>
+          <img alt="logo" src={logo} />
+          <h1 className="brand">CU-All</h1>
+        </div>
         <nav className="tabs">
           {TABS.map((t) => {
             const Icon = t.icon
@@ -63,7 +70,7 @@ export default function App() {
       </header>
 
       <main className="content">
-        {tab === 'grade' ? <GradeCalculator /> : <LinkHub />}
+        <ActivePage />
       </main>
     </div>
   )

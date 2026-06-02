@@ -1,28 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FiPlus, FiTrash2, FiRotateCcw, FiSave, FiX, FiShare2, FiDownload, FiEdit2 } from 'react-icons/fi'
-
-// Chulalongkorn / standard Thai 4.0 grade scale.
-// Letters map to grade points; S / U / W are not counted toward the GPA.
-const GRADES = [
-  { value: 'A', point: 4.0 },
-  { value: 'B+', point: 3.5 },
-  { value: 'B', point: 3.0 },
-  { value: 'C+', point: 2.5 },
-  { value: 'C', point: 2.0 },
-  { value: 'D+', point: 1.5 },
-  { value: 'D', point: 1.0 },
-  { value: 'F', point: 0.0 },
-]
-const POINT = Object.fromEntries(GRADES.map((g) => [g.value, g.point]))
-// Grades that carry no grade-point and are excluded from the average.
-const NON_GPA = new Set(['S', 'U', 'W'])
-
-// Round half-up to 2 decimals, the way Thai universities report GPA/GPAX.
-// Plain toFixed(2) rounds 3.155 -> "3.15" because the float is stored as
-// 3.15499999…; the +1e-9 nudge (far below 0.005) corrects the half-up case
-// without affecting genuine .xx4 values.
-const round2 = (n) => Math.round(n * 100 + 1e-9) / 100
-const fmt2 = (n) => round2(n).toFixed(2)
+import { readJSON, writeJSON, readString, writeString } from '@/shared/lib'
+import { GRADES, fmt2 } from '../model/grade-scale'
+import { computeGpa, computeGpax } from '../model/calc'
+import { buildShareUrl, parseSharePayload } from '../lib/share'
+import '../grade-calculator.css'
 
 const LS_MODE = 'allcu.grade.mode'
 const LS_GPA = 'allcu.grade.gpaRows'
@@ -35,24 +17,19 @@ const newId = () => `r${++seq}-${Date.now()}`
 const blankCourse = () => ({ id: newId(), name: '', credits: '3', grade: 'A' })
 const blankTerm = (n = '') => ({ id: newId(), name: n, credits: '', gpa: '' })
 
-function load(key, fallback, normalize) {
-  try {
-    const arr = JSON.parse(localStorage.getItem(key) || 'null')
-    if (Array.isArray(arr) && arr.length) return arr.map(normalize)
-  } catch {
-    /* ignore corrupt storage */
-  }
+// Read a stored row array (or fall back to defaults), re-mapping each row
+// through `normalize` so old/partial saved data is migrated to the current shape.
+function loadRows(key, fallback, normalize) {
+  const arr = readJSON(key, null)
+  if (Array.isArray(arr) && arr.length) return arr.map(normalize)
   return fallback()
 }
 
 export default function GradeCalculator() {
-  const [mode, setMode] = useState(() => {
-    const m = localStorage.getItem(LS_MODE)
-    return m === 'gpax' ? 'gpax' : 'gpa'
-  })
+  const [mode, setMode] = useState(() => (readString(LS_MODE, 'gpa') === 'gpax' ? 'gpax' : 'gpa'))
 
   const [gpaRows, setGpaRows] = useState(() =>
-    load(LS_GPA, () => [blankCourse(), blankCourse(), blankCourse()], (r) => ({
+    loadRows(LS_GPA, () => [blankCourse(), blankCourse(), blankCourse()], (r) => ({
       id: newId(),
       name: r.name ?? '',
       credits: String(r.credits ?? '3'),
@@ -60,7 +37,7 @@ export default function GradeCalculator() {
     })),
   )
   const [gpaxRows, setGpaxRows] = useState(() =>
-    load(LS_GPAX, () => [blankTerm('ภาคต้น ปี 1'), blankTerm('ภาคปลาย ปี 1')], (r) => ({
+    loadRows(LS_GPAX, () => [blankTerm('ภาคต้น ปี 1'), blankTerm('ภาคปลาย ปี 1')], (r) => ({
       id: newId(),
       name: r.name ?? '',
       credits: String(r.credits ?? ''),
@@ -70,7 +47,7 @@ export default function GradeCalculator() {
 
   // Per-term GPA results saved from GPA mode, reused in GPAX mode.
   const [saved, setSaved] = useState(() =>
-    load(LS_SAVED, () => [], (r) => ({
+    loadRows(LS_SAVED, () => [], (r) => ({
       id: newId(),
       name: r.name ?? '',
       credits: String(r.credits ?? ''),
@@ -81,43 +58,13 @@ export default function GradeCalculator() {
   const [editingId, setEditingId] = useState(null) // saved record being edited
   const [msg, setMsg] = useState('') // transient share/import status
 
-  useEffect(() => localStorage.setItem(LS_MODE, mode), [mode])
-  useEffect(() => localStorage.setItem(LS_GPA, JSON.stringify(gpaRows)), [gpaRows])
-  useEffect(() => localStorage.setItem(LS_GPAX, JSON.stringify(gpaxRows)), [gpaxRows])
-  useEffect(() => localStorage.setItem(LS_SAVED, JSON.stringify(saved)), [saved])
+  useEffect(() => writeString(LS_MODE, mode), [mode])
+  useEffect(() => writeJSON(LS_GPA, gpaRows), [gpaRows])
+  useEffect(() => writeJSON(LS_GPAX, gpaxRows), [gpaxRows])
+  useEffect(() => writeJSON(LS_SAVED, saved), [saved])
 
-  // ---- GPA (per-term, computed from letter grades) ----
-  const gpaResult = useMemo(() => {
-    let points = 0
-    let gpaCredits = 0
-    let totalCredits = 0
-    for (const r of gpaRows) {
-      const c = parseFloat(r.credits)
-      if (!Number.isFinite(c) || c <= 0) continue
-      totalCredits += c
-      if (NON_GPA.has(r.grade)) continue
-      const p = POINT[r.grade]
-      if (p === undefined) continue
-      points += p * c
-      gpaCredits += c
-    }
-    return { value: gpaCredits > 0 ? points / gpaCredits : 0, gpaCredits, totalCredits }
-  }, [gpaRows])
-
-  // ---- GPAX (cumulative, computed from each term's GPA + credits) ----
-  const gpaxResult = useMemo(() => {
-    let points = 0
-    let credits = 0
-    for (const r of gpaxRows) {
-      const c = parseFloat(r.credits)
-      const g = parseFloat(r.gpa)
-      if (!Number.isFinite(c) || c <= 0) continue
-      if (!Number.isFinite(g) || g < 0) continue
-      points += g * c
-      credits += c
-    }
-    return { value: credits > 0 ? points / credits : 0, credits }
-  }, [gpaxRows])
+  const gpaResult = useMemo(() => computeGpa(gpaRows), [gpaRows])
+  const gpaxResult = useMemo(() => computeGpax(gpaxRows), [gpaxRows])
 
   const isGpax = mode === 'gpax'
   const result = isGpax ? gpaxResult.value : gpaResult.value
@@ -194,17 +141,10 @@ export default function GradeCalculator() {
   const addSavedToGpax = (rec) => setGpaxRows((rs) => [...rs, toRow(rec)])
   const addAllSaved = () => setGpaxRows((rs) => [...rs, ...saved.map(toRow)])
 
-  // ---- Share / Import (UTF-8 safe base64, carried in a URL hash) ----
-  const enc = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)))
-  const dec = (b) => new TextDecoder().decode(Uint8Array.from(atob(b), (c) => c.charCodeAt(0)))
-
+  // ---- Share / Import ----
   const shareSaved = async () => {
     if (!saved.length) return
-    const payload = {
-      v: 1,
-      saved: saved.map(({ name, credits, gpa, rows }) => ({ name, credits, gpa, rows })),
-    }
-    const url = `${window.location.origin}${window.location.pathname}#d=${enc(JSON.stringify(payload))}`
+    const url = await buildShareUrl(saved)
     try {
       await navigator.clipboard.writeText(url)
       flash('คัดลอกลิงก์แชร์แล้ว ✓ ส่งให้เพื่อนเปิดเพื่อนำเข้าได้เลย')
@@ -214,33 +154,17 @@ export default function GradeCalculator() {
   }
 
   // Decode a shared code/URL and append its terms to the saved list.
-  const ingest = (raw) => {
-    const code = raw.includes('#d=') ? raw.split('#d=')[1].trim() : raw.trim()
-    const data = JSON.parse(dec(code))
-    const arr = Array.isArray(data) ? data : data.saved
-    if (!Array.isArray(arr)) throw new Error('invalid payload')
-    const imported = arr.map((r) => ({
-      id: newId(),
-      name: String(r.name ?? ''),
-      credits: String(r.credits ?? ''),
-      gpa: String(r.gpa ?? ''),
-      rows: Array.isArray(r.rows)
-        ? r.rows.map((x) => ({
-            name: String(x.name ?? ''),
-            credits: String(x.credits ?? ''),
-            grade: String(x.grade ?? 'A'),
-          }))
-        : undefined,
-    }))
+  const ingest = async (raw) => {
+    const imported = (await parseSharePayload(raw)).map((r) => ({ id: newId(), ...r }))
     setSaved((s) => [...s, ...imported])
     return imported.length
   }
 
-  const importSaved = () => {
+  const importSaved = async () => {
     const raw = window.prompt('วางลิงก์หรือโค้ดที่แชร์มา:')
     if (!raw) return
     try {
-      flash(`นำเข้า ${ingest(raw)} ภาคเรียนแล้ว ✓`)
+      flash(`นำเข้า ${await ingest(raw)} ภาคเรียนแล้ว ✓`)
     } catch {
       flash('ลิงก์/โค้ดไม่ถูกต้อง ✗')
     }
@@ -252,15 +176,14 @@ export default function GradeCalculator() {
     if (!h.startsWith('#d=')) return undefined
     window.history.replaceState(null, '', window.location.pathname + window.location.search)
     // Defer out of the effect body so the import doesn't cascade renders.
-    const t = window.setTimeout(() => {
+    const t = window.setTimeout(async () => {
       try {
-        flash(`นำเข้า ${ingest(h)} ภาคเรียนจากลิงก์แล้ว ✓`)
+        flash(`นำเข้า ${await ingest(h)} ภาคเรียนจากลิงก์แล้ว ✓`)
       } catch {
         flash('ลิงก์นำเข้าไม่ถูกต้อง ✗')
       }
     }, 0)
     return () => window.clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const renderSavedPanel = () => (

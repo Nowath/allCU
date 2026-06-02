@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Lint only application source; skip build output and agent/skill tooling
+  // directories, which vendor third-party scripts that fail these rules.
+  globalIgnores(['dist', '.kiro', '.claude', '.agents']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

@@ -1,44 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FiSearch, FiExternalLink, FiStar } from 'react-icons/fi'
-import sites, { CATEGORIES } from './sites'
+import { FiSearch, FiStar } from 'react-icons/fi'
+import { readJSON, writeJSON } from '@/shared/lib'
+import sites, { CATEGORIES } from '../model/sites'
+import SiteCard from './SiteCard'
+import '../link-hub.css'
 
 const LS_BOOKMARKS = 'allcu.bookmarks'
 
 function loadBookmarks() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(LS_BOOKMARKS) || '[]')
-    return Array.isArray(arr) ? arr.filter((id) => sites.some((s) => s.id === id)) : []
-  } catch {
-    return []
-  }
-}
-
-function SiteCard({ site, bookmarked, onToggle }) {
-  return (
-    <div className="card">
-      <a
-        className="card-link"
-        href={site.url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span className="card-name">{site.name}</span>
-        <span className="card-url">
-          {site.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-        </span>
-        <FiExternalLink className="card-go" size={15} />
-      </a>
-      <button
-        className={`card-star ${bookmarked ? 'on' : ''}`}
-        onClick={() => onToggle(site.id)}
-        title={bookmarked ? 'ลบจาก Bookmark' : 'เพิ่มเป็น Bookmark'}
-        aria-label="Bookmark"
-        aria-pressed={bookmarked}
-      >
-        <FiStar size={16} />
-      </button>
-    </div>
-  )
+  const arr = readJSON(LS_BOOKMARKS, [])
+  return Array.isArray(arr) ? arr.filter((id) => sites.some((s) => s.id === id)) : []
 }
 
 export default function LinkHub() {
@@ -46,7 +17,7 @@ export default function LinkHub() {
   const [bookmarks, setBookmarks] = useState(loadBookmarks)
 
   useEffect(() => {
-    localStorage.setItem(LS_BOOKMARKS, JSON.stringify(bookmarks))
+    writeJSON(LS_BOOKMARKS, bookmarks)
   }, [bookmarks])
 
   const toggleBookmark = (id) =>
