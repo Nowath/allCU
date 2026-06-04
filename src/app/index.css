@@ -144,10 +144,14 @@ body {
 }
 .theme-toggle:hover { color: var(--text); background: var(--surface); }
 
+/* Hamburger + in-menu theme item are mobile-only; hidden on desktop. */
+.nav-toggle { display: none; }
+.tab-theme { display: none; }
+
 .content {
   flex: 1;
   width: 100%;
-  max-width: 880px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 28px 20px 64px;
 }
@@ -157,20 +161,63 @@ body {
   .content { padding: 22px 14px 56px; }
 }
 
-@media (max-width: 560px) {
+/* ---------- Mobile: collapse the nav into a hamburger drawer ---------- */
+@media (max-width: 640px) {
   .topbar { gap: 10px; padding: 0 12px; }
-  /* Free up room for the tab labels by dropping the wordmark (logo image stays). */
-  .brand { display: none; }
-  .tabs { flex: 1; gap: 8px; }
-  .tab {
-    flex: 1;
+
+  /* The desktop icon-only theme toggle gives way to the menu item. */
+  .theme-toggle { display: none; }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    padding: 9px 8px;
-    gap: 6px;
-    font-size: 0.88rem;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
   }
-  /* Hide the tab icons on mobile — labels only. */
-  .tab svg { display: none; }
+  .nav-toggle:hover { background: var(--surface); }
+
+  /* Drawer drops below the bar and fills the rest of the screen; toggled by
+     .open. dvh keeps it correct under mobile browser chrome. */
+  .tabs {
+    position: fixed;
+    top: var(--bar-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100dvh - var(--bar-h));
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--bg);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs.open { display: flex; }
+  .tab {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 11px 14px;
+    font-size: 0.95rem;
+  }
+  .tab svg { display: inline-flex; }
+
+  /* Theme as the last menu item, separated from the page tabs. */
+  .tab-theme {
+    display: flex;
+    margin-top: 4px;
+    padding-top: 13px;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { FiGrid, FiBookOpen, FiSun, FiMoon } from 'react-icons/fi'
+import { FiGrid, FiBookOpen, FiCalendar, FiSun, FiMoon, FiMenu, FiX } from 'react-icons/fi'
 import { readString, writeString } from '@/shared/lib'
 import { GradeCalculatorPage } from '@/pages/grade-calculator'
 import { LinkHubPage } from '@/pages/link-hub'
+import { SchedulePage } from '@/pages/schedule'
 import logo from '@/assets/cualllogo.png'
 import './index.css'
 
@@ -11,6 +12,7 @@ const LS_THEME = 'allcu.theme'
 
 const TABS = [
   { key: 'grade', label: 'คำนวณเกรด', icon: FiBookOpen, Page: GradeCalculatorPage },
+  { key: 'schedule', label: 'ตารางเรียน', icon: FiCalendar, Page: SchedulePage },
   { key: 'hub', label: 'รวมเว็บ', icon: FiGrid, Page: LinkHubPage },
 ]
 
@@ -25,6 +27,9 @@ export default function App() {
     return saved === 'dark' || saved === 'light' ? saved : 'light'
   })
 
+  // Mobile navigation drawer (hamburger menu).
+  const [menuOpen, setMenuOpen] = useState(false)
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     writeString(LS_THEME, theme)
@@ -33,7 +38,10 @@ export default function App() {
   const select = (key) => {
     setTab(key)
     writeString(LS_TAB, key)
+    setMenuOpen(false)
   }
+
+  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))
 
   const ActivePage = (TABS.find((t) => t.key === tab) ?? TABS[0]).Page
 
@@ -44,7 +52,7 @@ export default function App() {
           <img alt="logo" src={logo} />
           <h1 className="brand">CU-All</h1>
         </div>
-        <nav className="tabs">
+        <nav className={`tabs ${menuOpen ? 'open' : ''}`}>
           {TABS.map((t) => {
             const Icon = t.icon
             return (
@@ -58,14 +66,28 @@ export default function App() {
               </button>
             )
           })}
+          {/* Theme lives in the menu on mobile (hidden on desktop, where the
+              icon button at the right edge handles it instead). */}
+          <button className="tab tab-theme" onClick={toggleTheme}>
+            {theme === 'light' ? <FiMoon size={16} /> : <FiSun size={16} />}
+            <span>{theme === 'light' ? 'ธีมมืด' : 'ธีมสว่าง'}</span>
+          </button>
         </nav>
         <button
           className="theme-toggle"
-          onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+          onClick={toggleTheme}
           title={theme === 'light' ? 'สลับเป็นธีมมืด' : 'สลับเป็นธีมสว่าง'}
           aria-label="สลับธีม"
         >
           {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+        </button>
+        <button
+          className="nav-toggle"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="เมนู"
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
         </button>
       </header>
 
