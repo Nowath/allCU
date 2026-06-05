@@ -257,6 +257,23 @@
 .sched-field input:focus { border-color: var(--accent); }
 .sched-field input::placeholder { color: var(--muted); opacity: 0.7; }
 
+/* Day / start-time selects shown in the add-subject modal. */
+.sched-add-pickers { display: flex; gap: 10px; }
+.sched-add-pickers .sched-field { flex: 1; min-width: 0; }
+.sched-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.sched-select:focus { border-color: var(--accent); }
+
 /* Duration picker — one button per number of consecutive hours. */
 .sched-spans { display: flex; flex-wrap: wrap; gap: 8px; }
 .sched-span {
@@ -329,6 +346,122 @@
 }
 .sched-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
+/* ---------- Mobile: day tabs + subject cards ---------- */
+/* Hidden on desktop (the scrollable table is enough); shown below the table on
+   narrow screens where adding via the grid is fiddly. */
+.sched-mobile { display: none; }
+
+.sched-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  margin-bottom: 14px;
+  scrollbar-width: none;
+}
+.sched-tabs::-webkit-scrollbar { display: none; }
+.sched-tab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.sched-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.sched-cards { display: flex; flex-direction: column; gap: 10px; }
+.sched-empty {
+  margin: 0;
+  padding: 28px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.sched-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.sched-card:hover { background: var(--surface); }
+.sched-card:active { border-color: var(--accent); }
+.sched-card-accent {
+  flex: 0 0 5px;
+  align-self: stretch;
+  background: var(--border-strong);
+}
+.sched-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+  padding: 12px 14px;
+}
+.sched-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sched-card-code {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sched-card-time {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.sched-card-name { font-size: 0.85rem; opacity: 0.9; }
+.sched-card-room { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+
+.sched-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sched-add-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 560px) {
   .sched-head { flex-direction: column; align-items: stretch; }
@@ -341,4 +474,6 @@
     left: auto;
     z-index: auto;
   }
+
+  .sched-mobile { display: block; margin-top: 22px; }
 }
