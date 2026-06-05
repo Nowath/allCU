@@ -16,7 +16,7 @@ export const SLOTS = (() => {
   for (let h = 8; h < 17; h += 1) {
     const a = String(h).padStart(2, '0')
     const b = String(h + 1).padStart(2, '0')
-    out.push({ key: `${a}${b}`, label: `${a}:00–${b}:00`, short: `${a}:00` })
+    out.push({ key: `${a}${b}`, label: `${a}:00 – ${b}:00`, short: `${a}:00` })
   }
   return out
 })()

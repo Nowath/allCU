@@ -44,7 +44,7 @@
 
 /* Wrapper that gets rendered to PNG (framed table + watermark footer below it). */
 .sched-capture {
-  min-width: 880px;
+  min-width: 1100px;
 }
 
 /* The rounded frame around the timetable — kept separate from the capture
@@ -58,7 +58,7 @@
 
 .sched-table {
   width: 100%;
-  min-width: 880px;            /* forces horizontal scroll when cramped */
+  min-width: 1100px;           /* forces horizontal scroll when cramped */
   border-collapse: collapse;
   table-layout: fixed;
   background: var(--card);
@@ -97,7 +97,7 @@
 
 /* Time-slot column headers (top row). */
 .sched-slot {
-  width: 88px;
+  width: 100px;
   padding: 9px 6px;
   background: var(--surface);
   color: var(--text);

@@ -163,7 +163,7 @@ export default function Schedule() {
               <th className="sched-corner">วัน \ เวลา</th>
               {SLOTS.map((s) => (
                 <th key={s.key} className="sched-slot">
-                  {s.short}
+                  {s.label}
                 </th>
               ))}
             </tr>
